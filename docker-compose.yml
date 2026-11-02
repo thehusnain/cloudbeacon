@@ -1,0 +1,15 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: cloudbeacon-mongo
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: cbadmin
+      MONGO_INITDB_ROOT_PASSWORD: change_this_password
+    volumes:
+      - cloudbeacon-mongo-data:/data/db
+
+volumes:
+  cloudbeacon-mongo-data:

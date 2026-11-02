@@ -11,6 +11,7 @@ it('parses typed environment settings and defaults', () => {
   expect(parseEnv(valid)).toEqual({
     ...valid,
     PORT: 5000,
+    AUTH_RATE_LIMIT_MAX: 10,
     NODE_ENV: 'development',
   });
   expect(
@@ -19,6 +20,8 @@ it('parses typed environment settings and defaults', () => {
 });
 
 it.each([
+  ['AUTH_RATE_LIMIT_MAX', '-1'],
+  ['AUTH_RATE_LIMIT_MAX', 'abc'],
   ['PORT', '0'],
   ['PORT', '65536'],
   ['PORT', 'abc'],

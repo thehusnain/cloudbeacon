@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { applyCommonMiddleware } from './middleware/common.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
+import { createAuthRouter } from './routes/auth.js';
+
 export const app = express();
 
 applyCommonMiddleware(app);
@@ -15,6 +17,8 @@ app.get('/api/health', (_req, res) => {
     db: connected ? 'connected' : 'disconnected',
   });
 });
+
+app.use('/api/auth', createAuthRouter());
 
 app.use(notFoundHandler);
 app.use(errorHandler);

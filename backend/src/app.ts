@@ -6,6 +6,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { createAuthRouter } from './routes/auth.js';
 
 import { serverRouter } from './routes/servers.js';
+import eventsRouter from './routes/events.js';
 import { createAgentRouter } from './routes/agent.js';
 
 export const app = express();
@@ -25,6 +26,7 @@ app.use('/api/auth', createAuthRouter());
 
 app.use('/api/servers', serverRouter);
 app.use('/api/agent', createAgentRouter());
+app.use('/api/events', eventsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

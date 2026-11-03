@@ -31,6 +31,11 @@ const serverSchema = new Schema(
       required: true,
     },
     lastHeartbeat: { type: Date, default: null },
+    stats: {
+      cpuPercent: { type: Number, min: 0, max: 100 },
+      memoryMb: { type: Number, min: 0 },
+      bufferedEvents: { type: Number, min: 0 },
+    },
     agentTokenHash: { type: String, select: false, index: true },
   },
   { timestamps: true },

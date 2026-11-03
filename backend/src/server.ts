@@ -2,14 +2,17 @@ import { createServer } from 'node:http';
 import { app } from './app.js';
 import { connectDb, disconnectDb } from './config/db.js';
 import { env } from './config/env.js';
+import { startOfflineJob } from './jobs/offlineJob.js';
 
 const server = createServer(app);
 let shuttingDown = false;
+let stopOfflineJob: (() => void) | undefined;
 
 async function shutdown(exitCode: number): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log('Shutting down backend');
+  stopOfflineJob?.();
 
   const timeout = setTimeout(() => {
     console.error('Shutdown timed out');
@@ -50,6 +53,7 @@ try {
   if (shuttingDown) {
     await disconnectDb();
   } else {
+    stopOfflineJob = startOfflineJob();
     server.listen(env.PORT, () => {
       console.log(`Cloud Beacon backend listening on port ${env.PORT}`);
     });

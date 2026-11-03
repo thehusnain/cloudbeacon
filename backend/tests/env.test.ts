@@ -13,6 +13,9 @@ it('parses typed environment settings and defaults', () => {
     PORT: 5000,
     AUTH_RATE_LIMIT_MAX: 10,
     ENROLL_RATE_LIMIT_MAX: 10,
+    AGENT_RATE_LIMIT_MAX: 1000,
+    OFFLINE_CHECK_INTERVAL_MS: 30_000,
+    OFFLINE_THRESHOLD_SECONDS: 90,
     NODE_ENV: 'development',
   });
   expect(

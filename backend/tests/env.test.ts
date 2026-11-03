@@ -12,6 +12,7 @@ it('parses typed environment settings and defaults', () => {
     ...valid,
     PORT: 5000,
     AUTH_RATE_LIMIT_MAX: 10,
+    ENROLL_RATE_LIMIT_MAX: 10,
     NODE_ENV: 'development',
   });
   expect(
@@ -20,6 +21,8 @@ it('parses typed environment settings and defaults', () => {
 });
 
 it.each([
+  ['ENROLL_RATE_LIMIT_MAX', '-1'],
+  ['ENROLL_RATE_LIMIT_MAX', 'abc'],
   ['AUTH_RATE_LIMIT_MAX', '-1'],
   ['AUTH_RATE_LIMIT_MAX', 'abc'],
   ['PORT', '0'],

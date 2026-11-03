@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
+  ENROLL_RATE_LIMIT_MAX: z.coerce.number().int().min(0).default(10),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().min(0).default(10),
   PORT: z.coerce.number().int().min(1).max(65535).default(5000),
   MONGO_URI: z

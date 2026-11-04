@@ -1,6 +1,7 @@
 import { Event } from '../models/Event.js';
 import { Server } from '../models/Server.js';
 import { eventSchema, type EVENT_TYPES } from '../utils/eventSchema.js';
+import { evaluateEvents } from './alertService.js';
 
 export type EventFilters = {
   serverId?: string;
@@ -54,6 +55,10 @@ export async function ingestEvents(serverId: string, input: unknown[]) {
     try {
       const inserted = await Event.insertMany(insertable, { ordered: false });
       accepted = inserted.length;
+      await evaluateEvents(
+        serverId,
+        inserted as unknown as Parameters<typeof evaluateEvents>[1],
+      );
     } catch (error) {
       const details = error as {
         writeErrors?: { code?: number } | { code?: number }[];
@@ -78,6 +83,12 @@ export async function ingestEvents(serverId: string, input: unknown[]) {
         details.result?.insertedCount ??
         details.insertedDocs?.length ??
         insertable.length - writeErrors.length;
+      if (details.insertedDocs?.length) {
+        await evaluateEvents(
+          serverId,
+          details.insertedDocs as Parameters<typeof evaluateEvents>[1],
+        );
+      }
     }
   }
   return { accepted, duplicates, ...(rejected.length ? { rejected } : {}) };

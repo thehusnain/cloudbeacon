@@ -3,6 +3,7 @@ import { app } from './app.js';
 import { connectDb, disconnectDb } from './config/db.js';
 import { env } from './config/env.js';
 import { startOfflineJob } from './jobs/offlineJob.js';
+import { seedDefaultRules } from './services/ruleSeed.js';
 
 const server = createServer(app);
 let shuttingDown = false;
@@ -50,6 +51,7 @@ server.on('error', () => {
 
 try {
   await connectDb();
+  await seedDefaultRules();
   if (shuttingDown) {
     await disconnectDb();
   } else {

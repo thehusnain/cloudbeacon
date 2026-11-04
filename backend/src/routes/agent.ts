@@ -7,9 +7,13 @@ import {
 import { createEnrollmentLimiter } from '../middleware/enrollmentRateLimit.js';
 import { agentAuth } from '../middleware/agentAuth.js';
 import { createAgentLimiter } from '../middleware/agentRateLimit.js';
-import { validateEventBatch, validateHeartbeat } from '../middleware/eventValidation.js';
+import {
+  validateEventBatch,
+  validateHeartbeat,
+} from '../middleware/eventValidation.js';
 import { postEvents, postHeartbeat } from '../controllers/eventController.js';
 import { enrollAgent } from '../controllers/serverController.js';
+import { listAgentRules } from '../controllers/ruleController.js';
 
 export function createAgentRouter() {
   const router = Router();
@@ -21,7 +25,20 @@ export function createAgentRouter() {
     validateBody(enrollmentSchema),
     enrollAgent,
   );
-  router.post('/events', agentAuth, validateEmptyQuery, validateEventBatch, postEvents);
-  router.post('/heartbeat', agentAuth, validateEmptyQuery, validateHeartbeat, postHeartbeat);
+  router.post(
+    '/events',
+    agentAuth,
+    validateEmptyQuery,
+    validateEventBatch,
+    postEvents,
+  );
+  router.get('/rules', agentAuth, validateEmptyQuery, listAgentRules);
+  router.post(
+    '/heartbeat',
+    agentAuth,
+    validateEmptyQuery,
+    validateHeartbeat,
+    postHeartbeat,
+  );
   return router;
 }

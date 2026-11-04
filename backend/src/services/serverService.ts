@@ -2,6 +2,7 @@ import { Server, toPublicServer } from '../models/Server.js';
 import { EnrollmentKey } from '../models/EnrollmentKey.js';
 import { generateSecret, sha256 } from '../utils/crypto.js';
 import { AppError } from '../utils/AppError.js';
+import { emitToServerOwner } from '../realtime/socket.js';
 
 const notFound = () => new AppError('Server not found', 404, 'NOT_FOUND');
 
@@ -95,6 +96,11 @@ export async function enrollAgent({
   );
   // Fail closed if the server was deleted or cannot be enrolled; never unconsume a key.
   if (!server) throw new AppError('Invalid enrollment key', 400, 'INVALID_KEY');
+  await emitToServerOwner(server.id, 'server:status', {
+    serverId: server.id,
+    status: server.status,
+    lastHeartbeat: server.lastHeartbeat,
+  });
   return {
     serverId: server.id as string,
     agentToken,

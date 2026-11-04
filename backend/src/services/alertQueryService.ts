@@ -1,6 +1,7 @@
 import { Alert } from '../models/Alert.js';
 import { Server } from '../models/Server.js';
 import { AppError } from '../utils/AppError.js';
+import { emitToServerOwner } from '../realtime/socket.js';
 
 export type AlertFilters = {
   serverId?: string;
@@ -48,11 +49,20 @@ export async function updateAlert(
   status: 'open' | 'acknowledged' | 'resolved',
 ) {
   const owned = await Server.find({ owner: ownerId }, { _id: 1 }).lean();
+  const filter = { _id: id, serverId: { $in: owned.map((s) => s._id) } };
+  const previous = await Alert.findOne(filter).select('status').lean();
   const alert = await Alert.findOneAndUpdate(
-    { _id: id, serverId: { $in: owned.map((s) => s._id) } },
+    filter,
     { $set: { status } },
     { returnDocument: 'after', runValidators: true },
   ).lean();
   if (!alert) throw notFound();
+  if (previous?.status !== alert.status) {
+    await emitToServerOwner(String(alert.serverId), 'alert:updated', {
+      id: String(alert._id),
+      status: alert.status,
+      eventCount: alert.eventIds.length,
+    });
+  }
   return alert;
 }

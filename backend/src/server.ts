@@ -4,6 +4,7 @@ import { connectDb, disconnectDb } from './config/db.js';
 import { env } from './config/env.js';
 import { startOfflineJob } from './jobs/offlineJob.js';
 import { seedDefaultRules } from './services/ruleSeed.js';
+import { closeSocket, initSocket } from './realtime/socket.js';
 
 const server = createServer(app);
 let shuttingDown = false;
@@ -23,6 +24,7 @@ async function shutdown(exitCode: number): Promise<void> {
   timeout.unref();
 
   try {
+    await closeSocket();
     if (server.listening) {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
@@ -55,6 +57,7 @@ try {
   if (shuttingDown) {
     await disconnectDb();
   } else {
+    initSocket(server);
     stopOfflineJob = startOfflineJob();
     server.listen(env.PORT, () => {
       console.log(`Cloud Beacon backend listening on port ${env.PORT}`);

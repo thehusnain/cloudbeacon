@@ -2,6 +2,7 @@ import { Event } from '../models/Event.js';
 import { Server } from '../models/Server.js';
 import { eventSchema, type EVENT_TYPES } from '../utils/eventSchema.js';
 import { evaluateEvents } from './alertService.js';
+import { emitToServerOwner } from '../realtime/socket.js';
 
 export type EventFilters = {
   serverId?: string;
@@ -59,6 +60,15 @@ export async function ingestEvents(serverId: string, input: unknown[]) {
         serverId,
         inserted as unknown as Parameters<typeof evaluateEvents>[1],
       );
+      await emitBatchSummary(
+        serverId,
+        inserted as unknown as Array<{
+          type: string;
+          severity: string;
+          sourceIp?: string;
+          timestamp: Date;
+        }>,
+      );
     } catch (error) {
       const details = error as {
         writeErrors?: { code?: number } | { code?: number }[];
@@ -88,10 +98,44 @@ export async function ingestEvents(serverId: string, input: unknown[]) {
           serverId,
           details.insertedDocs as Parameters<typeof evaluateEvents>[1],
         );
+        await emitBatchSummary(
+          serverId,
+          details.insertedDocs as Array<{
+            type: string;
+            severity: string;
+            sourceIp?: string;
+            timestamp: Date;
+          }>,
+        );
       }
     }
   }
   return { accepted, duplicates, ...(rejected.length ? { rejected } : {}) };
+}
+
+async function emitBatchSummary(
+  serverId: string,
+  inserted: Array<{
+    type: string;
+    severity: string;
+    sourceIp?: string;
+    timestamp: Date;
+  }>,
+) {
+  if (!inserted.length) return;
+  const latest = inserted.reduce((current, event) =>
+    event.timestamp > current.timestamp ? event : current,
+  );
+  await emitToServerOwner(serverId, 'event:new', {
+    serverId,
+    count: inserted.length,
+    latest: {
+      type: latest.type,
+      severity: latest.severity,
+      sourceIp: latest.sourceIp,
+      timestamp: latest.timestamp,
+    },
+  });
 }
 
 export async function listEvents(ownerId: string, filters: EventFilters) {

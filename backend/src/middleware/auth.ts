@@ -4,17 +4,14 @@ import { env } from '../config/env.js';
 import { User, toAuthUser } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 
-function unauthorized() {
+export function unauthorized() {
   return new AppError('Authentication required', 401, 'UNAUTHORIZED');
 }
 
-export const requireAuth: RequestHandler = async (req, _res, next) => {
-  const match = /^Bearer ([^\s]+)$/i.exec(req.get('Authorization') ?? '');
-  if (!match) throw unauthorized();
-
+export async function authenticateUserToken(token: string) {
   let userId: string;
   try {
-    const payload = jwt.verify(match[1], env.JWT_SECRET, {
+    const payload = jwt.verify(token, env.JWT_SECRET, {
       algorithms: ['HS256'],
     });
     if (
@@ -32,6 +29,12 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
 
   const user = await User.findById(userId);
   if (!user) throw unauthorized();
-  req.user = toAuthUser(user);
+  return toAuthUser(user);
+}
+
+export const requireAuth: RequestHandler = async (req, _res, next) => {
+  const match = /^Bearer ([^\s]+)$/i.exec(req.get('Authorization') ?? '');
+  if (!match) throw unauthorized();
+  req.user = await authenticateUserToken(match[1]);
   next();
 };

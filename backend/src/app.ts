@@ -9,6 +9,7 @@ import { serverRouter } from './routes/servers.js';
 import eventsRouter from './routes/events.js';
 import { createAgentRouter } from './routes/agent.js';
 import alertsRouter from './routes/alerts.js';
+import devicesRouter from './routes/devices.js';
 
 export const app = express();
 
@@ -29,6 +30,7 @@ app.use('/api/servers', serverRouter);
 app.use('/api/agent', createAgentRouter());
 app.use('/api/events', eventsRouter);
 app.use('/api/alerts', alertsRouter);
+app.use('/api/devices', devicesRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

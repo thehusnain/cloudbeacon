@@ -3,6 +3,7 @@ import { Alert } from '../models/Alert.js';
 import { Event } from '../models/Event.js';
 import { Rule } from '../models/Rule.js';
 import { createCommand } from './commandService.js';
+import { emitToServerOwner } from '../realtime/socket.js';
 
 export function ruleAppliesToServer(
   rule: { scope?: { serverId?: unknown } | null },
@@ -125,8 +126,13 @@ export async function evaluateEvents(
             event.sourceIp,
           );
           await existing.save();
+          await emitToServerOwner(serverId, 'alert:updated', {
+            id: existing.id,
+            status: existing.status,
+            eventCount: existing.eventIds.length,
+          });
         } else {
-          await Alert.create({
+          const created = await Alert.create({
             serverId,
             ruleId: rule._id,
             severity: rule.severity,
@@ -140,6 +146,14 @@ export async function evaluateEvents(
             status: 'open',
             eventIds,
             sourceIp: event.sourceIp,
+          });
+          await emitToServerOwner(serverId, 'alert:new', {
+            id: created.id,
+            serverId,
+            severity: created.severity,
+            title: created.title,
+            plainDescription: created.plainDescription,
+            createdAt: created.createdAt,
           });
           if (rule.action === 'block' && event.sourceIp) {
             try {

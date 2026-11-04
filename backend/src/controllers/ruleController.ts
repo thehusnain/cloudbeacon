@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 import { Rule } from '../models/Rule.js';
 import { getRulesVersion } from '../services/alertService.js';
 import { AppError } from '../utils/AppError.js';
+import { allowlistIps } from '../config/agentPolicy.js';
 const protectedPaths = ['/etc/passwd', '/etc/shadow', '/etc/ssh/sshd_config'];
 export const listAgentRules: RequestHandler = async (req, res) => {
   if (!req.server)
@@ -28,6 +29,6 @@ export const listAgentRules: RequestHandler = async (req, res) => {
       action: rule.action,
     })),
     protectedPaths,
-    allowlistIps: [],
+    allowlistIps,
   });
 };

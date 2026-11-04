@@ -7,11 +7,12 @@ export const EVENT_TYPES = [
 ] as const;
 
 const isoDateTime = z.iso.datetime({ offset: true });
+export const ipAddressSchema = z.union([z.ipv4(), z.ipv6()]);
 export const eventSchema = z.object({
   eventId: z.string().min(1).max(100),
   type: z.enum(EVENT_TYPES),
   severity: z.enum(['low', 'medium', 'high', 'critical']),
-  sourceIp: z.union([z.ipv4(), z.ipv6()]).optional(),
+  sourceIp: ipAddressSchema.optional(),
   timestamp: isoDateTime,
   details: z.record(z.string(), z.unknown()).default({}).refine((value) => Buffer.byteLength(JSON.stringify(value)) <= 10_240, 'details must not exceed 10 KB'),
 }).transform((event) => ({ ...event, timestamp: new Date(event.timestamp) }));

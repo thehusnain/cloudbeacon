@@ -1,5 +1,6 @@
 import type { ServerDocument } from '../models/Server.js';
 import { getRulesVersion } from './alertService.js';
+import { getPendingCommandsForHeartbeat } from './commandService.js';
 
 export async function recordHeartbeat(
   server: ServerDocument,
@@ -14,10 +15,9 @@ export async function recordHeartbeat(
   server.agentVersion = body.agentVersion;
   server.stats = body.stats;
   await server.save();
-  // TODO: include pending commands when command delivery is implemented.
   return {
     serverTime: new Date().toISOString(),
     rulesVersion: await getRulesVersion(),
-    commands: [],
+    commands: await getPendingCommandsForHeartbeat(server.id),
   };
 }

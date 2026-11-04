@@ -14,6 +14,11 @@ import {
 import { postEvents, postHeartbeat } from '../controllers/eventController.js';
 import { enrollAgent } from '../controllers/serverController.js';
 import { listAgentRules } from '../controllers/ruleController.js';
+import { postCommandResult } from '../controllers/commandController.js';
+import {
+  validateCommandId,
+  validateCommandResult,
+} from '../middleware/commandValidation.js';
 
 export function createAgentRouter() {
   const router = Router();
@@ -39,6 +44,14 @@ export function createAgentRouter() {
     validateEmptyQuery,
     validateHeartbeat,
     postHeartbeat,
+  );
+  router.post(
+    '/commands/:commandId/result',
+    agentAuth,
+    validateEmptyQuery,
+    validateCommandId,
+    validateCommandResult,
+    postCommandResult,
   );
   return router;
 }

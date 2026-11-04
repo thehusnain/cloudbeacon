@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { Alert } from '../models/Alert.js';
 import { Event } from '../models/Event.js';
 import { Rule } from '../models/Rule.js';
+import { createCommand } from './commandService.js';
 
 export function ruleAppliesToServer(
   rule: { scope?: { serverId?: unknown } | null },
@@ -140,6 +141,19 @@ export async function evaluateEvents(
             eventIds,
             sourceIp: event.sourceIp,
           });
+          if (rule.action === 'block' && event.sourceIp) {
+            try {
+              await createCommand(
+                serverId,
+                'block_ip',
+                { ip: event.sourceIp, durationSeconds: 3600 },
+                'rule',
+                null,
+              );
+            } catch (error) {
+              console.error('Rule block command creation failed', error);
+            }
+          }
         }
       }
     }

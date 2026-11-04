@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
+  FIREBASE_SERVICE_ACCOUNT_PATH: z.string().trim().optional(),
   ENROLL_RATE_LIMIT_MAX: z.coerce.number().int().min(0).default(10),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().min(0).default(10),
   AGENT_RATE_LIMIT_MAX: z.coerce.number().int().min(0).default(1000),

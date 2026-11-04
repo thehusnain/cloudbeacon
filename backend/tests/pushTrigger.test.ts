@@ -1,0 +1,20 @@
+import { expect, it, vi } from 'vitest';
+import { Server } from '../src/models/Server.js';
+import { Rule } from '../src/models/Rule.js';
+import { ingestEvents } from '../src/services/eventService.js';
+const push = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+vi.mock('../src/services/pushService.js', () => ({ sendAlertPush: push }));
+it('pushes once for a new high alert, skips updates and medium alerts, and tolerates push failure', async () => {
+ const server = await Server.create({ name: 'Push Server', owner: '507f1f77bcf86cd799439011' });
+ await Rule.create({ name: 'Push high', type: 'root_login', severity: 'high', action: 'alert' });
+ const event = (id: string, type = 'root_login') => ({ eventId: id, type, severity: 'high', timestamp: new Date().toISOString(), details: {} });
+ await ingestEvents(server.id, [event('one')]);
+ await vi.waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+ await ingestEvents(server.id, [event('two')]);
+ await Rule.create({ name: 'Push medium', type: 'system_log', severity: 'medium', action: 'alert' });
+ await ingestEvents(server.id, [event('three', 'system_log')]);
+ expect(push).toHaveBeenCalledTimes(1);
+ push.mockRejectedValue(new Error('failure'));
+ await Rule.create({ name: 'Push critical', type: 'port_scan', severity: 'critical', action: 'alert' });
+ await expect(ingestEvents(server.id, [event('four', 'port_scan')])).resolves.toMatchObject({ accepted: 1 });
+});

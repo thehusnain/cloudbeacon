@@ -1,3 +1,5 @@
+import { sendAlertPush } from './pushService.js';
+import { Server } from '../models/Server.js';
 import { Types } from 'mongoose';
 import { Alert } from '../models/Alert.js';
 import { Event } from '../models/Event.js';
@@ -147,6 +149,22 @@ export async function evaluateEvents(
             eventIds,
             sourceIp: event.sourceIp,
           });
+          if (created.severity === 'high' || created.severity === 'critical') {
+            void Server.findById(serverId)
+              .select('owner')
+              .lean()
+              .then((server) => {
+                if (server)
+                  return sendAlertPush(String(server.owner), {
+                    id: created.id,
+                    serverId,
+                    severity: created.severity,
+                    title: created.title,
+                    plainDescription: created.plainDescription,
+                  });
+              })
+              .catch(() => console.error('Alert push dispatch failed'));
+          }
           await emitToServerOwner(serverId, 'alert:new', {
             id: created.id,
             serverId,

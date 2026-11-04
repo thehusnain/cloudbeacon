@@ -1,3 +1,4 @@
+import incidentsRouter from './routes/incidents.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import { applyCommonMiddleware } from './middleware/common.js';
@@ -31,6 +32,7 @@ app.use('/api/agent', createAgentRouter());
 app.use('/api/events', eventsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/devices', devicesRouter);
+app.use('/api/incidents', incidentsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

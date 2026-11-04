@@ -3,3 +3,4 @@ node_modules
 dist
 coverage
 backend/tools/fake-agent/.agent-state.json
+firebase-service-account*.json

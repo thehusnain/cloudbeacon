@@ -19,6 +19,7 @@ const alertSchema = new Schema(
     },
     eventIds: [{ type: Schema.Types.ObjectId, ref: 'Event' }],
     sourceIp: String,
+    incidentId: { type: Schema.Types.ObjectId, ref: 'Incident' },
   },
   { timestamps: true },
 );

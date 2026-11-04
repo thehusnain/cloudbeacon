@@ -1,3 +1,4 @@
+import { attachAlertToIncident } from './incidentService.js';
 import { sendAlertPush } from './pushService.js';
 import { Server } from '../models/Server.js';
 import { Types } from 'mongoose';
@@ -128,6 +129,7 @@ export async function evaluateEvents(
             event.sourceIp,
           );
           await existing.save();
+          await attachAlertToIncident(existing);
           await emitToServerOwner(serverId, 'alert:updated', {
             id: existing.id,
             status: existing.status,
@@ -149,6 +151,7 @@ export async function evaluateEvents(
             eventIds,
             sourceIp: event.sourceIp,
           });
+          await attachAlertToIncident(created);
           if (created.severity === 'high' || created.severity === 'critical') {
             void Server.findById(serverId)
               .select('owner')

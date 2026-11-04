@@ -9,6 +9,7 @@ const valid = {
 
 it('parses typed environment settings and defaults', () => {
   expect(parseEnv(valid)).toEqual({
+    INCIDENT_WINDOW_MINUTES: 30,
     ...valid,
     PORT: 5000,
     AUTH_RATE_LIMIT_MAX: 10,

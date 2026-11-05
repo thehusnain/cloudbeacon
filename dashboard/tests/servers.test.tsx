@@ -157,7 +157,12 @@ it("shows all status badges, host details and relative heartbeats", async () => 
   expect(screen.getByText("2 minutes ago")).toBeTruthy();
 });
 it("requires confirmation before deleting and returns to the list", async () => {
-  vi.spyOn(client, "get").mockResolvedValue({ data: { server } });
+  vi.spyOn(client, "get").mockImplementation(async (url) => ({
+    data:
+      url === "/events" || url === "/alerts"
+        ? { items: [], total: 0, page: 1, limit: 10 }
+        : { server },
+  }));
   const remove = vi.spyOn(client, "delete").mockResolvedValue({});
   mount(
     <Routes>

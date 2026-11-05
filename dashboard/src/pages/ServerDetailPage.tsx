@@ -1,3 +1,4 @@
+import { ServerActivity } from "../components/ServerActivity";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -117,20 +118,7 @@ export function ServerDetailPage() {
             />
           )}
         </Card>
-        <Card>
-          <h2 className="text-lg font-semibold">Recent events</h2>
-          <EmptyState
-            title="Coming soon"
-            description="Recent security events will appear here."
-          />
-        </Card>
-        <Card>
-          <h2 className="text-lg font-semibold">Open alerts</h2>
-          <EmptyState
-            title="Coming soon"
-            description="Open security alerts will appear here."
-          />
-        </Card>
+        <ServerActivity id={id} name={data.name} />
       </div>
       {confirm && (
         <Modal

@@ -1,6 +1,6 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server, type Server as SocketServer } from 'socket.io';
-import { env } from '../config/env.js';
+import { corsOptions, isAllowedOrigin } from '../config/cors.js';
 import { authenticateUserToken } from '../middleware/auth.js';
 import { Server as MonitorServer } from '../models/Server.js';
 
@@ -9,12 +9,15 @@ let io: SocketServer | undefined;
 export function initSocket(httpServer: HttpServer): SocketServer {
   if (io) return io;
   io = new Server(httpServer, {
-    cors: { origin: env.CLIENT_URL, methods: ['GET', 'POST'] },
+    cors: {
+      ...corsOptions,
+      // Let allowRequest reject disallowed handshake origins with 403.
+      // Engine.IO translates CORS callback errors into generic 400 responses.
+      origin: (origin, callback) =>
+        callback(null, isAllowedOrigin(origin) ? origin ?? false : false),
+    },
     allowRequest: (request, callback) =>
-      callback(
-        null,
-        !request.headers.origin || request.headers.origin === env.CLIENT_URL,
-      ),
+      callback(null, isAllowedOrigin(request.headers.origin)),
   });
   io.use(async (socket, next) => {
     try {

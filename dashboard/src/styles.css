@@ -1,0 +1,37 @@
+@import "tailwindcss";
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #e2e8f0;
+  background: #090e17;
+  color-scheme: dark;
+  font-synthesis: none;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+}
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+a {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid #5eead4;
+  outline-offset: 4px;
+}
+::selection {
+  background: #115e59;
+  color: white;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

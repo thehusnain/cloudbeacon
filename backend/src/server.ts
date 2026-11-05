@@ -63,6 +63,7 @@ try {
   if (shuttingDown) {
     await disconnectDb();
   } else {
+    console.log(`Allowed browser origin: ${env.CLIENT_URL}`);
     initSocket(server);
     stopOfflineJob = startOfflineJob();
     server.listen(env.PORT, () => {

@@ -59,22 +59,26 @@ export function Card({
     </section>
   );
 }
-export function Badge({
-  severity,
-}: {
-  severity: "low" | "medium" | "high" | "critical";
-}) {
+export function Badge(
+  props:
+    | { severity: "low" | "medium" | "high" | "critical"; status?: never }
+    | { status: "online" | "offline" | "pending"; severity?: never },
+) {
+  const label = props.status ?? props.severity;
   const colors = {
     low: "bg-blue-400/15 text-blue-300",
     medium: "bg-yellow-400/15 text-yellow-300",
     high: "bg-orange-400/15 text-orange-300",
     critical: "bg-red-400/15 text-red-300",
+    online: "bg-green-400/15 text-green-300",
+    offline: "bg-red-400/15 text-red-300",
+    pending: "bg-yellow-400/15 text-yellow-300",
   };
   return (
     <span
-      className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${colors[severity]}`}
+      className={`rounded-md px-2 py-1 text-xs font-semibold uppercase ${colors[label]}`}
     >
-      {severity}
+      {label}
     </span>
   );
 }
@@ -173,7 +177,10 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onClose={onClose}
       aria-labelledby={id}
       className="m-auto w-[min(90vw,32rem)] rounded-2xl border border-slate-700 bg-slate-900 p-6 text-white backdrop:bg-black/70"

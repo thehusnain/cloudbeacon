@@ -26,7 +26,11 @@ export function Layout() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const title =
-    links.find(([, path]) => path === location.pathname)?.[0] ?? "Workspace";
+    links.find(
+      ([, path]) =>
+        path === location.pathname ||
+        (path !== "/" && location.pathname.startsWith(`${path}/`)),
+    )?.[0] ?? "Workspace";
   return (
     <div className="min-h-screen">
       {open && (

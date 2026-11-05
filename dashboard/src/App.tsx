@@ -1,3 +1,5 @@
+import { ServersPage } from "./pages/ServersPage";
+import { ServerDetailPage } from "./pages/ServerDetailPage";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthPage } from "./pages/AuthPage";
 import { ComingSoon } from "./pages/ComingSoon";
@@ -10,20 +12,17 @@ export function App() {
       <Route path="/register" element={<AuthPage key="register" register />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
-          {[
-            "Overview",
-            "Servers",
-            "Events",
-            "Alerts",
-            "Incidents",
-            "Settings",
-          ].map((title) => (
-            <Route
-              key={title}
-              path={title === "Overview" ? "/" : `/${title.toLowerCase()}`}
-              element={<ComingSoon title={title} />}
-            />
-          ))}
+          <Route path="/servers" element={<ServersPage />} />
+          <Route path="/servers/:id" element={<ServerDetailPage />} />
+          {["Overview", "Events", "Alerts", "Incidents", "Settings"].map(
+            (title) => (
+              <Route
+                key={title}
+                path={title === "Overview" ? "/" : `/${title.toLowerCase()}`}
+                element={<ComingSoon title={title} />}
+              />
+            ),
+          )}
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

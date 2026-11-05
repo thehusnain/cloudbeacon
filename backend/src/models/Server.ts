@@ -41,6 +41,7 @@ const serverSchema = new Schema(
   { timestamps: true },
 );
 
+serverSchema.index({ status: 1, lastHeartbeat: 1 });
 serverSchema.set('toJSON', {
   transform: (_doc, ret) => {
     const safe: Partial<typeof ret> = { ...ret };

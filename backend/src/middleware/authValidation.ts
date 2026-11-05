@@ -11,12 +11,12 @@ const password = z
   .regex(/[0-9]/)
   .refine((value) => Buffer.byteLength(value, 'utf8') <= 72);
 
-export const registerSchema = z.object({
+export const registerSchema = z.strictObject({
   name: z.string().trim().min(2).max(60),
   email,
   password,
 });
-export const loginSchema = z.object({ email, password });
+export const loginSchema = z.strictObject({ email, password });
 
 export function validateBody(schema: z.ZodType): RequestHandler {
   return (req, _res, next) => {

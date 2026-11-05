@@ -1,3 +1,8 @@
+import {
+  validateEmptyBody,
+  validateEmptyQuery,
+} from './middleware/serverValidation.js';
+import statsRouter from './routes/stats.js';
 import incidentsRouter from './routes/incidents.js';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -16,7 +21,7 @@ export const app = express();
 
 applyCommonMiddleware(app);
 
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', validateEmptyQuery, validateEmptyBody, (_req, res) => {
   const connected = mongoose.connection.readyState === 1;
   res.status(connected ? 200 : 503).json({
     status: connected ? 'ok' : 'error',
@@ -33,6 +38,7 @@ app.use('/api/events', eventsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/devices', devicesRouter);
 app.use('/api/incidents', incidentsRouter);
+app.use('/api/stats', statsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

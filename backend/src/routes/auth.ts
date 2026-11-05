@@ -1,3 +1,7 @@
+import {
+  validateEmptyQuery,
+  validateEmptyBody,
+} from '../middleware/serverValidation.js';
 import { Router } from 'express';
 import * as controller from '../controllers/authController.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -11,6 +15,7 @@ import {
 export function createAuthRouter() {
   const router = Router();
   const limiter = createAuthLimiter();
+  router.use(validateEmptyQuery);
   router.post(
     '/register',
     limiter,
@@ -18,6 +23,6 @@ export function createAuthRouter() {
     controller.register,
   );
   router.post('/login', limiter, validateBody(loginSchema), controller.login);
-  router.get('/me', requireAuth, controller.me);
+  router.get('/me', requireAuth, validateEmptyBody, controller.me);
   return router;
 }

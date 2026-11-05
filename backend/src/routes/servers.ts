@@ -40,6 +40,7 @@ serverRouter.get(
 serverRouter.delete(
   '/:id',
   validateServerId,
+  validateEmptyQuery,
   validateEmptyBody,
   controller.deleteServer,
 );

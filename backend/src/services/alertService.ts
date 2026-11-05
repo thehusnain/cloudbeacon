@@ -185,15 +185,15 @@ export async function evaluateEvents(
                 'rule',
                 null,
               );
-            } catch (error) {
-              console.error('Rule block command creation failed', error);
+            } catch {
+              console.error('Rule block command creation failed');
             }
           }
         }
       }
     }
-  } catch (error) {
-    console.error('Alert evaluation failed', error);
+  } catch {
+    console.error('Alert evaluation failed');
   }
 }
 

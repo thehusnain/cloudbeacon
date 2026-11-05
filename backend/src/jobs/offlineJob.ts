@@ -31,11 +31,11 @@ export async function checkOfflineServers(
           status: 'offline',
           lastHeartbeat: updated.lastHeartbeat,
         });
-      } catch (error) {
-        console.error('Realtime server status emission failed', error);
+      } catch {
+        console.error('Realtime server status emission failed');
       }
-    } catch (error) {
-      console.error('Offline server update failed', error);
+    } catch {
+      console.error('Offline server update failed');
     }
   }
   return changed;
@@ -47,16 +47,26 @@ export function startOfflineJob(
     thresholdSeconds?: number;
     check?: (now: Date, thresholdSeconds: number) => Promise<number>;
   } = {},
-): () => void {
+): () => Promise<void> {
   const intervalMs = options.intervalMs ?? env.OFFLINE_CHECK_INTERVAL_MS;
   const thresholdSeconds =
     options.thresholdSeconds ?? env.OFFLINE_THRESHOLD_SECONDS;
   const check = options.check ?? checkOfflineServers;
+  let pending: Promise<void> | undefined;
   const timer = setInterval(() => {
-    void check(new Date(), thresholdSeconds).catch((error: unknown) => {
-      console.error('Offline server check failed', error);
-    });
+    if (pending) return;
+    pending = check(new Date(), thresholdSeconds)
+      .then(() => undefined)
+      .catch(() => {
+        console.error('Offline server check failed');
+      })
+      .finally(() => {
+        pending = undefined;
+      });
   }, intervalMs);
   timer.unref();
-  return () => clearInterval(timer);
+  return async () => {
+    clearInterval(timer);
+    await pending;
+  };
 }

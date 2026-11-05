@@ -61,7 +61,7 @@ export async function enrollAgent({
   const claimed = await EnrollmentKey.findOneAndUpdate(
     { keyHash, usedAt: null, expiresAt: { $gt: now } },
     { $set: { usedAt: now } },
-    { new: true },
+    { returnDocument: 'after' },
   );
   if (!claimed) {
     const existing = await EnrollmentKey.findOne({ keyHash });
@@ -92,7 +92,7 @@ export async function enrollAgent({
         agentVersion,
       },
     },
-    { new: true, runValidators: true },
+    { returnDocument: 'after', runValidators: true },
   );
   // Fail closed if the server was deleted or cannot be enrolled; never unconsume a key.
   if (!server) throw new AppError('Invalid enrollment key', 400, 'INVALID_KEY');

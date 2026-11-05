@@ -1,3 +1,4 @@
+import { queryInteger } from '../utils/queryInteger.js';
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import { AppError } from '../utils/AppError.js';
@@ -6,8 +7,8 @@ const query = z.strictObject({
   serverId: id.optional(),
   status: z.enum(['open', 'closed']).optional(),
   severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(25),
+  page: queryInteger(1, Number.MAX_SAFE_INTEGER, 1),
+  limit: queryInteger(1, 100, 25),
 });
 export const incidentQuery: RequestHandler = (req, res, next) => {
   const parsed = query.safeParse(req.query);

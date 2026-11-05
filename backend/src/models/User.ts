@@ -28,6 +28,7 @@ userSchema.set('toJSON', {
   transform: (_doc, ret) => {
     const safe: Partial<typeof ret> = { ...ret };
     delete safe.passwordHash;
+    delete safe.fcmTokens;
     return safe;
   },
 });

@@ -10,6 +10,11 @@ export function initSocket(httpServer: HttpServer): SocketServer {
   if (io) return io;
   io = new Server(httpServer, {
     cors: { origin: env.CLIENT_URL, methods: ['GET', 'POST'] },
+    allowRequest: (request, callback) =>
+      callback(
+        null,
+        !request.headers.origin || request.headers.origin === env.CLIENT_URL,
+      ),
   });
   io.use(async (socket, next) => {
     try {
@@ -39,8 +44,8 @@ export function emitToUser(
 ): void {
   try {
     io?.to(`user:${userId}`).emit(eventName, payload);
-  } catch (error) {
-    console.error('Realtime event emission failed', error);
+  } catch {
+    console.error('Realtime event emission failed');
   }
 }
 
@@ -54,8 +59,8 @@ export async function emitToServerOwner(
       .select('owner')
       .lean();
     if (server) emitToUser(String(server.owner), eventName, payload);
-  } catch (error) {
-    console.error('Realtime owner lookup failed', error);
+  } catch {
+    console.error('Realtime owner lookup failed');
   }
 }
 

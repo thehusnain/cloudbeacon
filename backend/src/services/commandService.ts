@@ -1,3 +1,4 @@
+import { canonicalIp } from '../utils/ip.js';
 import { Types } from 'mongoose';
 import { Command } from '../models/Command.js';
 import { Server } from '../models/Server.js';
@@ -22,16 +23,17 @@ export async function createCommand(
   if (!ipAddressSchema.safeParse(payload.ip).success) {
     throw new AppError('Invalid IP address', 400, 'VALIDATION_ERROR');
   }
+  payload = { ...payload, ip: canonicalIp(payload.ip) };
   const server = await Server.findById(serverId).select('ip').lean();
   if (!server) throw new AppError('Server not found', 404, 'NOT_FOUND');
   if (type === 'block_ip') {
-    if (allowlistIps.includes(payload.ip))
+    if (allowlistIps.some((ip) => canonicalIp(ip) === payload.ip))
       throw new AppError(
         'This IP address is allowlisted and cannot be blocked',
         400,
         'IP_ALLOWLISTED',
       );
-    if (server.ip === payload.ip)
+    if (server.ip && canonicalIp(server.ip) === payload.ip)
       throw new AppError(
         'A server cannot block its own IP address',
         400,

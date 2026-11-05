@@ -1,3 +1,4 @@
+import { responseSafety } from './responseSafety.js';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -8,11 +9,14 @@ import { requestLogger } from './requestLogger.js';
 
 export function applyCommonMiddleware(app: Express): void {
   app.use(requestLogger);
+  app.use(responseSafety);
   app.use(helmet());
   app.use(
     rateLimit({
       windowMs: 15 * 60 * 1000,
       limit: 100,
+      skip: (req) =>
+        req.path === '/api/agent' || req.path.startsWith('/api/agent/'),
       standardHeaders: 'draft-8',
       legacyHeaders: false,
       handler: (_req, _res, next) =>

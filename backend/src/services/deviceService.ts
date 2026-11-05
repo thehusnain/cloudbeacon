@@ -7,11 +7,12 @@ export async function registerDeviceToken(
   token: string,
 ): Promise<void> {
   await User.updateOne({ _id: userId }, { $addToSet: { fcmTokens: token } });
-  const user = await User.findById(userId).select('fcmTokens').lean();
-  if (!user || user.fcmTokens.length <= MAX_DEVICE_TOKENS) return;
+  // Trim the current array atomically instead of overwriting a stale snapshot.
   await User.updateOne(
     { _id: userId },
-    { $set: { fcmTokens: user.fcmTokens.slice(-MAX_DEVICE_TOKENS) } },
+    {
+      $push: { fcmTokens: { $each: [], $slice: -MAX_DEVICE_TOKENS } },
+    },
   );
 }
 

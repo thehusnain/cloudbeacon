@@ -25,4 +25,5 @@ const schema = new Schema(
 );
 schema.index({ serverId: 1, status: 1, lastActivityAt: -1 });
 schema.index({ serverId: 1, sourceIps: 1 });
+schema.index({ serverId: 1, lastActivityAt: -1 });
 export const Incident = model('Incident', schema);

@@ -17,7 +17,6 @@ const auth = (value: string) => ({ Authorization: `Bearer ${value}` });
 let userA: string;
 let userB: string;
 let tokenA: string;
-let tokenB: string;
 let agentA: string;
 let serverA: string;
 let serverB: string;
@@ -67,7 +66,6 @@ beforeAll(async () => {
   userA = a.id;
   userB = b.id;
   tokenA = jwt.sign({ sub: userA }, env.JWT_SECRET, { expiresIn: '7d' });
-  tokenB = jwt.sign({ sub: userB }, env.JWT_SECRET, { expiresIn: '7d' });
 });
 beforeEach(async () => {
   await Promise.all([
@@ -217,7 +215,7 @@ it('restricts alert read and update to the owning user and validates status chan
     const response = await request(app)
       [method](`/api/alerts/${alertB.id}`)
       .set(auth(tokenA))
-      .send({ status: 'resolved' })
+      .send(method === 'patch' ? { status: 'resolved' } : undefined)
       .expect(404);
     expect(response.body.error.code).toBe('NOT_FOUND');
   }

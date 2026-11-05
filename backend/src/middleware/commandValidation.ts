@@ -1,3 +1,4 @@
+import { queryInteger } from '../utils/queryInteger.js';
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import { ipAddressSchema } from '../utils/eventSchema.js';
@@ -16,8 +17,8 @@ const blockSchema = z.strictObject({
 const unblockSchema = z.strictObject({ ip: ipAddressSchema });
 const querySchema = z.strictObject({
   status: z.enum(['pending', 'delivered', 'done', 'failed']).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(25),
+  page: queryInteger(1, Number.MAX_SAFE_INTEGER, 1),
+  limit: queryInteger(1, 100, 25),
 });
 const resultSchema = z.strictObject({
   status: z.enum(['done', 'failed']),

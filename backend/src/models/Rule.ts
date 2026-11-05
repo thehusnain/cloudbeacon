@@ -22,4 +22,5 @@ const ruleSchema = new Schema(
   { timestamps: true },
 );
 ruleSchema.index({ 'scope.serverId': 1, type: 1, enabled: 1 });
+ruleSchema.index({ updatedAt: -1 });
 export const Rule = model('Rule', ruleSchema);

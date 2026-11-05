@@ -14,6 +14,11 @@ const notFound = () => new AppError('Alert not found', 404, 'NOT_FOUND');
 
 export async function listAlerts(ownerId: string, filters: AlertFilters) {
   const owned = await Server.find({ owner: ownerId }, { _id: 1 }).lean();
+  if (
+    filters.serverId &&
+    !owned.some((server) => String(server._id) === filters.serverId)
+  )
+    throw new AppError('Server not found', 404, 'NOT_FOUND');
   const ids = filters.serverId
     ? owned
         .filter((s) => s._id.toString() === filters.serverId)

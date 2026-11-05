@@ -7,7 +7,7 @@ export const requestLogger: RequestHandler = (req, res, next) => {
     console.log(
       JSON.stringify({
         method: req.method,
-        path: req.path,
+        path: req.route?.path ?? '[unmatched]',
         status: res.statusCode,
         durationMs: Math.round(performance.now() - started),
       }),

@@ -20,7 +20,7 @@ function safeBody(value) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [
       key,
       key.toLowerCase().includes('token') && typeof item === 'string'
-        ? `${item.slice(0, 6)}… [redacted]`
+        ? '[redacted]'
         : safeBody(item),
     ]));
   }
@@ -112,7 +112,7 @@ async function main() {
       return;
     }
     await writeFile(statePath, JSON.stringify({ serverId: result.body.serverId, agentToken: result.body.agentToken, url }, null, 2), { mode: 0o600 });
-    console.log(`Enrollment state saved to ${statePath}; token: ${result.body.agentToken.slice(0, 6)}… [redacted]`);
+    console.log(`Enrollment state saved to ${statePath}; token: [redacted]`);
     return;
   }
 
@@ -122,7 +122,7 @@ async function main() {
     return;
   }
   if (command === 'run') {
-    console.log(`Running fake agent for server ${state.serverId}; token ${state.agentToken.slice(0, 6)}… [redacted]. Press Ctrl+C to stop.`);
+    console.log(`Running fake agent for server ${state.serverId}; token [redacted]. Press Ctrl+C to stop.`);
     await sendHeartbeat(state);
     const timer = setInterval(() => { void sendHeartbeat(state); }, 30_000);
     process.once('SIGINT', () => { clearInterval(timer); process.exit(0); });

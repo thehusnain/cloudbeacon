@@ -62,6 +62,17 @@ it.each(['SIGINT', 'SIGTERM'] as const)(
         status: 'ok',
         db: 'connected',
       });
+      const blockedSocket = await fetch(
+        `http://127.0.0.1:${port}/socket.io/?EIO=4&transport=polling`,
+        { headers: { Origin: 'https://untrusted.example' } },
+      );
+      expect(blockedSocket.status).toBe(403);
+      const socketHandshake = await fetch(
+        `http://127.0.0.1:${port}/socket.io/?EIO=4&transport=polling`,
+        { headers: { Origin: process.env.CLIENT_URL! } },
+      );
+      expect(socketHandshake.status).toBe(200);
+      await socketHandshake.text();
       child.kill(signal);
       expect(await exited).toEqual([0, null]);
       expect(output).toContain('MongoDB disconnected');

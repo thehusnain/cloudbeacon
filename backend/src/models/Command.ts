@@ -30,4 +30,6 @@ commandSchema.index(
     partialFilterExpression: { type: 'block_ip', status: 'pending' },
   },
 );
+commandSchema.index({ serverId: 1, createdAt: -1 });
+commandSchema.index({ serverId: 1, status: 1, deliveredAt: 1 });
 export const Command = model('Command', commandSchema);

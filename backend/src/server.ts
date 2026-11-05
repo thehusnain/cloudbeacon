@@ -8,13 +8,13 @@ import { closeSocket, initSocket } from './realtime/socket.js';
 
 const server = createServer(app);
 let shuttingDown = false;
-let stopOfflineJob: (() => void) | undefined;
+let stopOfflineJob: (() => Promise<void>) | undefined;
 
 async function shutdown(exitCode: number): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log('Shutting down backend');
-  stopOfflineJob?.();
+  const offlineStopped = stopOfflineJob?.();
 
   const timeout = setTimeout(() => {
     console.error('Shutdown timed out');
@@ -30,11 +30,17 @@ async function shutdown(exitCode: number): Promise<void> {
         server.close((error) => (error ? reject(error) : resolve()));
       });
     }
-    await disconnectDb();
+    await offlineStopped;
   } catch {
     console.error('Failed to shut down cleanly');
     exitCode = 1;
   } finally {
+    try {
+      await disconnectDb();
+    } catch {
+      console.error('Failed to disconnect MongoDB');
+      exitCode = 1;
+    }
     clearTimeout(timeout);
     process.exitCode = exitCode;
   }

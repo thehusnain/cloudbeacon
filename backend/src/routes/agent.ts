@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validateBody } from '../middleware/authValidation.js';
 import {
   enrollmentSchema,
+  validateEmptyBody,
   validateEmptyQuery,
 } from '../middleware/serverValidation.js';
 import { createEnrollmentLimiter } from '../middleware/enrollmentRateLimit.js';
@@ -37,7 +38,13 @@ export function createAgentRouter() {
     validateEventBatch,
     postEvents,
   );
-  router.get('/rules', agentAuth, validateEmptyQuery, listAgentRules);
+  router.get(
+    '/rules',
+    agentAuth,
+    validateEmptyQuery,
+    validateEmptyBody,
+    listAgentRules,
+  );
   router.post(
     '/heartbeat',
     agentAuth,

@@ -25,4 +25,5 @@ const alertSchema = new Schema(
 );
 alertSchema.index({ serverId: 1, status: 1, createdAt: -1 });
 alertSchema.index({ serverId: 1, ruleId: 1, sourceIp: 1, createdAt: 1 });
+alertSchema.index({ serverId: 1, createdAt: -1 });
 export const Alert = model('Alert', alertSchema);

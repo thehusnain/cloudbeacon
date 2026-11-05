@@ -1,3 +1,4 @@
+import { AppError } from '../utils/AppError.js';
 import { Event } from '../models/Event.js';
 import { Server } from '../models/Server.js';
 import { eventSchema, type EVENT_TYPES } from '../utils/eventSchema.js';
@@ -140,6 +141,11 @@ async function emitBatchSummary(
 
 export async function listEvents(ownerId: string, filters: EventFilters) {
   const owned = await Server.find({ owner: ownerId }, { _id: 1 }).lean();
+  if (
+    filters.serverId &&
+    !owned.some((server) => String(server._id) === filters.serverId)
+  )
+    throw new AppError('Server not found', 404, 'NOT_FOUND');
   const serverIds = filters.serverId
     ? owned
         .filter((server) => server._id.toString() === filters.serverId)

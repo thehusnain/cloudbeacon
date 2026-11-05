@@ -1,3 +1,4 @@
+import { queryInteger } from '../utils/queryInteger.js';
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import { AppError } from '../utils/AppError.js';
@@ -10,8 +11,8 @@ const querySchema = z
       .optional(),
     status: z.enum(['open', 'acknowledged', 'resolved']).optional(),
     severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-    page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(100).default(25),
+    page: queryInteger(1, Number.MAX_SAFE_INTEGER, 1),
+    limit: queryInteger(1, 100, 25),
   })
   .strict();
 const paramsSchema = z.object({ id: z.string().regex(/^[a-f0-9]{24}$/i) });

@@ -39,7 +39,7 @@ function AlertActions({ alert }: { alert: Alert }) {
     </div>
   );
 }
-function AlertDetail({
+export function AlertDetail({
   id,
   onClose,
   serverNames,
@@ -74,8 +74,8 @@ function AlertDetail({
               <RelativeTime value={alert.createdAt} />
             </p>
             <p>
-              {alert.eventIds.length} linked event
-              {alert.eventIds.length === 1 ? "" : "s"}.
+              {alert.eventCount ?? alert.eventIds.length} linked event
+              {(alert.eventCount ?? alert.eventIds.length) === 1 ? "" : "s"}.
             </p>
             {alert.incidentId && (
               <Link

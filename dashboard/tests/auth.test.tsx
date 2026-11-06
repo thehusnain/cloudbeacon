@@ -5,7 +5,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../src/context/AuthContext";
 import { App } from "../src/App";
 import { client, TOKEN_KEY } from "../src/api/client";
-beforeEach(() => vi.restoreAllMocks());
+vi.mock("socket.io-client", () => ({
+  io: () => ({
+    on: () => {},
+    connect: () => {},
+    disconnect: () => {},
+    removeAllListeners: () => {},
+  }),
+}));
+beforeEach(() => {
+  vi.restoreAllMocks();
+  vi.spyOn(client, "get").mockRejectedValue(new Error("Mock API unavailable"));
+});
 function renderApp(path = "/login") {
   return render(
     <QueryClientProvider

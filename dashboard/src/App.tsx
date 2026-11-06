@@ -1,3 +1,5 @@
+import { SocketProvider } from "./context/SocketProvider";
+import { OverviewPage } from "./pages/OverviewPage";
 import { EventsPage } from "./pages/EventsPage";
 import { AlertsPage } from "./pages/AlertsPage";
 import { ServersPage } from "./pages/ServersPage";
@@ -9,25 +11,31 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 export function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<AuthPage key="login" />} />
-      <Route path="/register" element={<AuthPage key="register" register />} />
-      <Route element={<ProtectedRoute />}>
-        <Route element={<Layout />}>
-          <Route path="/servers" element={<ServersPage />} />
-          <Route path="/servers/:id" element={<ServerDetailPage />} />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/alerts" element={<AlertsPage />} />
-          {["Overview", "Incidents", "Settings"].map((title) => (
-            <Route
-              key={title}
-              path={title === "Overview" ? "/" : `/${title.toLowerCase()}`}
-              element={<ComingSoon title={title} />}
-            />
-          ))}
+    <SocketProvider>
+      <Routes>
+        <Route path="/login" element={<AuthPage key="login" />} />
+        <Route
+          path="/register"
+          element={<AuthPage key="register" register />}
+        />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/servers" element={<ServersPage />} />
+            <Route path="/servers/:id" element={<ServerDetailPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/alerts" element={<AlertsPage />} />
+            <Route path="/" element={<OverviewPage />} />
+            {["Incidents", "Settings"].map((title) => (
+              <Route
+                key={title}
+                path={title === "Overview" ? "/" : `/${title.toLowerCase()}`}
+                element={<ComingSoon title={title} />}
+              />
+            ))}
+          </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </SocketProvider>
   );
 }

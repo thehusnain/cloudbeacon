@@ -1,3 +1,4 @@
+import { useSocket } from "../hooks/useSocket";
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
@@ -22,6 +23,7 @@ const links = [
   ["Settings", "/settings", Settings],
 ] as const;
 export function Layout() {
+  const { status, unread } = useSocket();
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -70,6 +72,14 @@ export function Layout() {
             >
               <Icon size={18} />
               {label}
+              {label === "Alerts" && unread > 0 && (
+                <span
+                  aria-label={unread + " unread alerts"}
+                  className="ml-auto rounded-full bg-orange-400/20 px-2 py-0.5 text-xs text-orange-200"
+                >
+                  {unread}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -96,6 +106,15 @@ export function Layout() {
             </span>
           </div>
           <div className="flex items-center gap-5">
+            <span
+              className={
+                "text-xs " +
+                (status === "connected" ? "text-green-300" : "text-yellow-300")
+              }
+              aria-label="Realtime connection"
+            >
+              {status === "connected" ? "● Connected" : "● Reconnecting"}
+            </span>
             <span className="hidden text-sm text-slate-300 sm:inline">
               {user?.name}
             </span>

@@ -20,6 +20,7 @@ export interface Alert {
   status: AlertStatus;
   sourceIp?: string;
   eventIds: string[];
+  eventCount?: number;
   incidentId?: string;
   createdAt: string;
   updatedAt: string;

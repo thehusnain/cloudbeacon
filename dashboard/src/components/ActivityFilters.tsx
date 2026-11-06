@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useServers } from "../api/servers";
 import { errorMessage } from "../api/client";
@@ -21,11 +22,19 @@ export function useActivityParams(events = false) {
     "severity",
     ...(events ? ["type", "sourceIp", "from", "to"] : ["status"]),
   ]) {
-    if (params.get(key)) filters[key] = params.get(key)!;
+    const value = params.get(key)?.trim();
+    if (value && value.toLowerCase() !== "all") {
+      filters[key] =
+        key === "from" || key === "to"
+          ? dateBoundary(value, key === "to")
+          : value;
+    }
   }
   function change(key: string, value: string) {
     const next = new URLSearchParams(params);
-    next.set(key, value);
+    if (value.trim() && value.toLowerCase() !== "all")
+      next.set(key, value.trim());
+    else next.delete(key);
     if (key !== "page") next.delete("page");
     setParams(next);
   }
@@ -38,15 +47,57 @@ export function useActivityParams(events = false) {
     change,
   };
 }
+// Date-only filters are local calendar days; explicit ISO timestamps retain their precision.
+function dateBoundary(value: string, end: boolean) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value + "T00:00:00");
+  if (end) date.setHours(23, 59, 59, 999);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : value;
+}
 function localDate(value: string | null) {
-  if (!value || !Number.isFinite(Date.parse(value))) return "";
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (!Number.isFinite(Date.parse(value))) return "";
   const date = new Date(value);
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     .toISOString()
-    .slice(0, 16);
+    .slice(0, 10);
+}
+function SourceIpFilter({
+  value,
+  change,
+}: {
+  value: string;
+  change: (key: string, value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const latestChange = useRef(change);
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+  useEffect(() => {
+    latestChange.current = change;
+  }, [change]);
+  useEffect(() => {
+    if (draft === value) return;
+    const timer = setTimeout(
+      () => latestChange.current("sourceIp", draft.trim()),
+      400,
+    );
+    return () => clearTimeout(timer);
+  }, [draft, value]);
+  return (
+    <Input
+      label="Source IP"
+      name="sourceIp"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+    />
+  );
 }
 export function ActivityFilters({ events = false }: { events?: boolean }) {
-  const { params, setParams } = useActivityParams(events);
+  const { params, setParams, filters, change } = useActivityParams(events);
+  const [reset, setReset] = useState(0);
   const servers = useServers();
   const selectClass =
     "mt-2 block w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white";
@@ -59,36 +110,26 @@ export function ActivityFilters({ events = false }: { events?: boolean }) {
         />
       )}
       <form
-        key={params.toString()}
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
         onSubmit={(event) => {
           event.preventDefault();
           const data = new FormData(event.currentTarget);
-          const next = new URLSearchParams();
-          if (params.has("limit")) next.set("limit", params.get("limit")!);
-          for (const [key, value] of data) {
-            if (typeof value === "string" && value.trim())
-              next.set(
-                key,
-                key === "from" || key === "to"
-                  ? new Date(value).toISOString()
-                  : value.trim(),
-              );
-          }
-          setParams(next);
+          // Optional submit flushes a pending IP edit; other controls apply immediately.
+          change("sourceIp", String(data.get("sourceIp") ?? ""));
         }}
       >
         <label className="text-sm">
           Server
           <select
             name="serverId"
-            defaultValue={params.get("serverId") ?? ""}
+            value={String(filters.serverId ?? "")}
+            onChange={(e) => change("serverId", e.target.value)}
             className={selectClass}
           >
             <option value="">
               {servers.isPending ? "Loading servers…" : "All servers"}
             </option>
-            {params.get("serverId") &&
+            {filters.serverId &&
               !servers.data?.some((s) => s.id === params.get("serverId")) && (
                 <option value={params.get("serverId")!}>Selected server</option>
               )}
@@ -103,7 +144,8 @@ export function ActivityFilters({ events = false }: { events?: boolean }) {
           Severity
           <select
             name="severity"
-            defaultValue={params.get("severity") ?? ""}
+            value={String(filters.severity ?? "")}
+            onChange={(e) => change("severity", e.target.value)}
             className={selectClass}
           >
             <option value="">All severities</option>
@@ -120,7 +162,8 @@ export function ActivityFilters({ events = false }: { events?: boolean }) {
               Event type
               <select
                 name="type"
-                defaultValue={params.get("type") ?? ""}
+                value={String(filters.type ?? "")}
+                onChange={(e) => change("type", e.target.value)}
                 className={selectClass}
               >
                 <option value="">All types</option>
@@ -131,22 +174,34 @@ export function ActivityFilters({ events = false }: { events?: boolean }) {
                 ))}
               </select>
             </label>
-            <Input
-              label="Source IP"
-              name="sourceIp"
-              defaultValue={params.get("sourceIp") ?? ""}
+            <SourceIpFilter
+              key={reset}
+              value={String(filters.sourceIp ?? "")}
+              change={change}
             />
             <Input
-              label="From (local time)"
+              label="From date (local)"
               name="from"
-              type="datetime-local"
-              defaultValue={localDate(params.get("from"))}
+              type="date"
+              value={localDate(params.get("from"))}
+              onChange={(e) =>
+                change(
+                  "from",
+                  e.target.value ? dateBoundary(e.target.value, false) : "",
+                )
+              }
             />
             <Input
-              label="To (local time)"
+              label="To date (local)"
               name="to"
-              type="datetime-local"
-              defaultValue={localDate(params.get("to"))}
+              type="date"
+              value={localDate(params.get("to"))}
+              onChange={(e) =>
+                change(
+                  "to",
+                  e.target.value ? dateBoundary(e.target.value, true) : "",
+                )
+              }
             />
           </>
         ) : (
@@ -154,7 +209,8 @@ export function ActivityFilters({ events = false }: { events?: boolean }) {
             Status
             <select
               name="status"
-              defaultValue={params.get("status") ?? ""}
+              value={String(filters.status ?? "")}
+              onChange={(e) => change("status", e.target.value)}
               className={selectClass}
             >
               <option value="">All statuses</option>
@@ -171,9 +227,12 @@ export function ActivityFilters({ events = false }: { events?: boolean }) {
           <Button
             type="button"
             className="!bg-slate-700 !text-white"
-            onClick={() => setParams({})}
+            onClick={() => {
+              setReset((n) => n + 1);
+              setParams({});
+            }}
           >
-            Clear
+            Clear filters
           </Button>
         </div>
       </form>

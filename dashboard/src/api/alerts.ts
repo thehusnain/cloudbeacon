@@ -28,7 +28,10 @@ export function useUpdateAlert() {
       ).data.alert,
     onSuccess: async (alert) => {
       query.setQueryData(["alert", alert._id], alert);
-      await query.invalidateQueries({ queryKey: ["alerts"] });
+      await Promise.all([
+        query.invalidateQueries({ queryKey: ["alerts"] }),
+        query.invalidateQueries({ queryKey: ["stats", "overview"] }),
+      ]);
     },
   });
 }

@@ -104,11 +104,11 @@ it("restores event filters from the URL, changes requests and resets pagination"
   fireEvent.change(screen.getByLabelText("Source IP"), {
     target: { value: "198.51.100.7" },
   });
-  fireEvent.change(screen.getByLabelText("From (local time)"), {
-    target: { value: "2026-11-04T10:00" },
+  fireEvent.change(screen.getByLabelText("From date (local)"), {
+    target: { value: "2026-11-04" },
   });
-  fireEvent.change(screen.getByLabelText("To (local time)"), {
-    target: { value: "2026-11-05T10:00" },
+  fireEvent.change(screen.getByLabelText("To date (local)"), {
+    target: { value: "2026-11-05" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
   await waitFor(() =>
@@ -120,8 +120,8 @@ it("restores event filters from the URL, changes requests and resets pagination"
         severity: "high",
         type: "port_scan",
         sourceIp: "198.51.100.7",
-        from: new Date("2026-11-04T10:00").toISOString(),
-        to: new Date("2026-11-05T10:00").toISOString(),
+        from: new Date("2026-11-04T00:00:00").toISOString(),
+        to: new Date("2026-11-05T23:59:59.999").toISOString(),
       },
     }),
   );
@@ -183,7 +183,7 @@ it("applies alert filters and updates acknowledged and resolved status without r
     }),
   );
   // Return to all statuses so the updated card remains in view.
-  fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+  fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
   fireEvent.click(await screen.findByRole("button", { name: "Acknowledge" }));
   await waitFor(() =>
     expect(screen.getAllByText("Acknowledged").length).toBe(2),
@@ -254,3 +254,191 @@ it("requests recent events and open alerts for only the selected server", async 
     screen.getByRole("link", { name: "View all events" }).getAttribute("href"),
   ).toBe("/events?serverId=" + serverId);
 });
+
+it("changes severity immediately and resets the URL page without submitting", async () => {
+  mount(<EventsPage />, "/events?page=3");
+  await screen.findByText("Failed SSH login");
+  fireEvent.change(screen.getByLabelText("Severity"), {
+    target: { value: "critical" },
+  });
+  await waitFor(() =>
+    expect(client.get).toHaveBeenCalledWith("/events", {
+      params: { page: 1, limit: 25, severity: "critical" },
+    }),
+  );
+});
+it("omits empty and all sentinel values from URL filters", async () => {
+  mount(<AlertsPage />, "/alerts?serverId=all&severity=&status=all");
+  await screen.findByText("SSH brute force");
+  expect(client.get).toHaveBeenCalledWith("/alerts", {
+    params: { page: 1, limit: 25 },
+  });
+});
+
+it.each([
+  ["events", "Server", "serverId", serverId],
+  ["events", "Event type", "type", "ssh_failed_login"],
+  ["events", "Severity", "severity", "high"],
+  ["alerts", "Server", "serverId", serverId],
+  ["alerts", "Severity", "severity", "medium"],
+  ["alerts", "Status", "status", "acknowledged"],
+])(
+  "%s %s sends its API value and omits the cleared filter",
+  async (kind, label, key, value) => {
+    mount(
+      kind === "events" ? <EventsPage /> : <AlertsPage />,
+      "/" + kind + "?page=3",
+    );
+    await screen.findByText(
+      kind === "events" ? "Failed SSH login" : "SSH brute force",
+    );
+    if (label === "Server")
+      await screen.findByRole("option", { name: "Production" });
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    await waitFor(() =>
+      expect(client.get).toHaveBeenCalledWith("/" + kind, {
+        params: { page: 1, limit: 25, [key]: value },
+      }),
+    );
+    expect(screen.getByLabelText("Current URL").textContent).not.toContain(
+      "page=3",
+    );
+    fireEvent.change(screen.getByLabelText(label), { target: { value: "" } });
+    await waitFor(() =>
+      expect(client.get).toHaveBeenCalledWith("/" + kind, {
+        params: { page: 1, limit: 25 },
+      }),
+    );
+  },
+);
+it("debounces IP edits, preserves combined filters and cancels pending edits on clear", async () => {
+  mount(<EventsPage />, "/events?page=2");
+  await screen.findByText("Failed SSH login");
+  const get = vi.mocked(client.get);
+  get.mockClear();
+  fireEvent.change(screen.getByLabelText("Source IP"), {
+    target: { value: "198.51." },
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  });
+  fireEvent.change(screen.getByLabelText("Source IP"), {
+    target: { value: "198.51.100.7" },
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  });
+  expect(get).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Severity"), {
+    target: { value: "high" },
+  });
+  await waitFor(() =>
+    expect(get).toHaveBeenCalledWith("/events", {
+      params: {
+        page: 1,
+        limit: 25,
+        severity: "high",
+        sourceIp: "198.51.100.7",
+      },
+    }),
+  );
+  expect(
+    get.mock.calls.some(([, config]) => config?.params?.sourceIp === "198.51."),
+  ).toBe(false);
+  fireEvent.change(screen.getByLabelText("Source IP"), {
+    target: { value: "203.0.113.1" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 450));
+  });
+  expect(screen.getByLabelText("Current URL").textContent).toBe("");
+  expect((screen.getByLabelText("Source IP") as HTMLInputElement).value).toBe(
+    "",
+  );
+  expect(
+    get.mock.calls.some(
+      ([, config]) => config?.params?.sourceIp === "203.0.113.1",
+    ),
+  ).toBe(false);
+});
+it("uses inclusive local day boundaries, combines dates, and clears them", async () => {
+  mount(<EventsPage />, "/events?page=4");
+  await screen.findByText("Failed SSH login");
+  fireEvent.change(screen.getByLabelText("From date (local)"), {
+    target: { value: "2026-11-04" },
+  });
+  const from = new Date("2026-11-04T00:00:00").toISOString();
+  const to = new Date("2026-11-05T23:59:59.999").toISOString();
+  await waitFor(() =>
+    expect(client.get).toHaveBeenCalledWith("/events", {
+      params: { page: 1, limit: 25, from },
+    }),
+  );
+  fireEvent.change(screen.getByLabelText("To date (local)"), {
+    target: { value: "2026-11-05" },
+  });
+  await waitFor(() =>
+    expect(client.get).toHaveBeenCalledWith("/events", {
+      params: { page: 1, limit: 25, from, to },
+    }),
+  );
+  fireEvent.change(screen.getByLabelText("From date (local)"), {
+    target: { value: "" },
+  });
+  await waitFor(() =>
+    expect(client.get).toHaveBeenCalledWith("/events", {
+      params: { page: 1, limit: 25, to },
+    }),
+  );
+  fireEvent.change(screen.getByLabelText("To date (local)"), {
+    target: { value: "" },
+  });
+  await waitFor(() =>
+    expect(client.get).toHaveBeenCalledWith("/events", {
+      params: { page: 1, limit: 25 },
+    }),
+  );
+});
+it.each(["events", "alerts"])(
+  "%s shows filtered totals and clear resets filters and pagination",
+  async (kind) => {
+    vi.mocked(client.get).mockImplementation(async (url, config) => {
+      if (url === "/servers")
+        return { data: { servers: [{ id: serverId, name: "Production" }] } };
+      const filters = config?.params ?? {};
+      return {
+        data: {
+          items: kind === "events" ? [event] : [alert],
+          page: filters.page,
+          limit: filters.limit,
+          total: filters.severity ? 1 : 60,
+        },
+      };
+    });
+    mount(
+      kind === "events" ? <EventsPage /> : <AlertsPage />,
+      "/" + kind + "?page=2&limit=10&serverId=" + serverId,
+    );
+    await screen.findByText(/60 results/);
+    fireEvent.change(screen.getByLabelText("Severity"), {
+      target: { value: "high" },
+    });
+    expect(await screen.findByText("Page 1 of 1 · 1 results")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Next" }).hasAttribute("disabled"),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(await screen.findByText("Page 1 of 3 · 60 results")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Next" }).hasAttribute("disabled"),
+    ).toBe(false);
+    expect(screen.getByLabelText("Current URL").textContent).toBe("");
+    expect((screen.getByLabelText("Server") as HTMLSelectElement).value).toBe(
+      "",
+    );
+    expect((screen.getByLabelText("Severity") as HTMLSelectElement).value).toBe(
+      "",
+    );
+  },
+);

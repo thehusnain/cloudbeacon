@@ -162,3 +162,74 @@ it("missing evidence fields do not crash", () => {
   expect(screen.getByText("Security activity recorded")).toBeTruthy();
   expect(screen.getByText("No evidence provided.")).toBeTruthy();
 });
+it("finishes a successful close even when background refresh cannot finish", async () => {
+  detail();
+  await screen.findByRole("button", { name: "Close incident" });
+  vi.spyOn(client, "patch").mockResolvedValue({
+    data: { incident: { ...incident, status: "closed" } },
+  });
+  vi.mocked(client.get).mockImplementation(() => new Promise(() => {}));
+  fireEvent.click(screen.getByRole("button", { name: "Close incident" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(screen.getByRole("button", { name: "Reopen incident" })).toBeTruthy();
+});
+it("shows loading and an API error without changing the status", async () => {
+  let rejectRequest: (reason: unknown) => void = () => {};
+  vi.spyOn(client, "patch").mockImplementation(
+    () =>
+      new Promise((_resolve, reject) => {
+        rejectRequest = reject;
+      }),
+  );
+  detail();
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Close incident" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+  await waitFor(() =>
+    expect(
+      screen
+        .getAllByRole("button", { name: "Saving…" })
+        .every((button) => button.hasAttribute("disabled")),
+    ).toBe(true),
+  );
+  rejectRequest({
+    isAxiosError: true,
+    response: {
+      data: {
+        error: { code: "ERROR", message: "Unable to close this incident" },
+      },
+    },
+  });
+  expect(await screen.findByText("Unable to close this incident")).toBeTruthy();
+  expect(screen.getByText("Open")).toBeTruthy();
+  expect(client.patch).toHaveBeenCalledWith("/incidents/" + id, {
+    status: "closed",
+  });
+});
+it("updates cached list status after closing", async () => {
+  query.setQueryData(["incidents", { page: 1 }], {
+    items: [incident],
+    page: 1,
+    limit: 25,
+    total: 1,
+  });
+  vi.spyOn(client, "patch").mockResolvedValue({
+    data: { incident: { ...incident, status: "closed" } },
+  });
+  detail();
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Close incident" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+  expect(await screen.findByText("Closed")).toBeTruthy();
+  await waitFor(() =>
+    expect(
+      query.getQueryData<{ items: { status: string }[] }>([
+        "incidents",
+        { page: 1 },
+      ])?.items[0].status,
+    ).toBe("closed"),
+  );
+});

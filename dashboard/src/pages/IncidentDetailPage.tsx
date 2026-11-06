@@ -50,18 +50,23 @@ export function IncidentDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-semibold">{data.title}</h1>
         <Button
+          disabled={update.isPending}
           onClick={() => {
             update.reset();
             setConfirm(true);
           }}
         >
-          {data.status === "open" ? "Close incident" : "Reopen incident"}
+          {update.isPending
+            ? "Saving…"
+            : data.status === "open"
+              ? "Close incident"
+              : "Reopen incident"}
         </Button>
       </div>
       <Card>
         <div className="mb-4 flex gap-3">
           <Badge severity={data.severity} />
-          <span className="capitalize">{data.status}</span>
+          <span>{data.status === "closed" ? "Closed" : "Open"}</span>
         </div>
         <h2 className="mb-3 text-lg font-semibold">Incident summary</h2>
         <p className="whitespace-pre-line break-words leading-7 text-slate-300">
@@ -127,7 +132,7 @@ export function IncidentDetailPage() {
                 })
               }
             >
-              Confirm
+              {update.isPending ? "Saving…" : "Confirm"}
             </Button>
           </div>
         </Modal>

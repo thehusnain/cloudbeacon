@@ -1,3 +1,4 @@
+import { BlockIpModal } from "./BlockIpModal";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAlert, useUpdateAlert } from "../api/alerts";
@@ -48,6 +49,7 @@ export function AlertDetail({
   onClose: () => void;
   serverNames: Record<string, string>;
 }) {
+  const [blocking, setBlocking] = useState(false);
   const query = useAlert(id);
   const alert = query.data;
   return (
@@ -84,6 +86,16 @@ export function AlertDetail({
               >
                 View incident
               </Link>
+            )}
+            {alert.sourceIp && (
+              <Button onClick={() => setBlocking(true)}>Block this IP</Button>
+            )}
+            {blocking && (
+              <BlockIpModal
+                serverId={alert.serverId}
+                initialIp={alert.sourceIp}
+                onClose={() => setBlocking(false)}
+              />
             )}
             <AlertActions alert={alert} />
           </div>

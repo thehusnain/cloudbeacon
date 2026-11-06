@@ -1,3 +1,4 @@
+import { ServerCommands } from "../components/ServerCommands";
 import { ServerActivity } from "../components/ServerActivity";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -118,6 +119,7 @@ export function ServerDetailPage() {
             />
           )}
         </Card>
+        <ServerCommands serverId={id} />
         <ServerActivity id={id} name={data.name} />
       </div>
       {confirm && (

@@ -8,7 +8,7 @@ import { ServersPage } from "./pages/ServersPage";
 import { ServerDetailPage } from "./pages/ServerDetailPage";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthPage } from "./pages/AuthPage";
-import { ComingSoon } from "./pages/ComingSoon";
+import { SettingsPage } from "./pages/SettingsPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 export function App() {
@@ -29,13 +29,7 @@ export function App() {
             <Route path="/" element={<OverviewPage />} />
             <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/incidents/:id" element={<IncidentDetailPage />} />
-            {["Settings"].map((title) => (
-              <Route
-                key={title}
-                path={title === "Overview" ? "/" : `/${title.toLowerCase()}`}
-                element={<ComingSoon title={title} />}
-              />
-            ))}
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

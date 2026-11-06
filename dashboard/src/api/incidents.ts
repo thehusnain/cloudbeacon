@@ -78,14 +78,27 @@ export function useUpdateIncident(id: string) {
         })
       ).data.incident,
     onSuccess: async (incident) => {
+      // The PATCH response is authoritative. An older GET must not overwrite it.
+      await query.cancelQueries({ queryKey: ["incident", id], exact: true });
       query.setQueryData<Incident>(["incident", id], (old) =>
         old ? { ...old, status: incident.status } : old,
       );
-      await Promise.all([
-        query.invalidateQueries({ queryKey: ["incident", id] }),
-        query.invalidateQueries({ queryKey: ["incidents"] }),
-        query.invalidateQueries({ queryKey: ["stats", "overview"] }),
-      ]);
+      await query.cancelQueries({ queryKey: ["incidents"] });
+      query.setQueriesData<Page<Incident>>(
+        { queryKey: ["incidents"] },
+        (old) =>
+          old
+            ? {
+                ...old,
+                items: old.items.map((item) =>
+                  item._id === id ? { ...item, status: incident.status } : item,
+                ),
+              }
+            : old,
+      );
+      // Refresh filtered membership and totals without delaying mutation completion.
+      void query.invalidateQueries({ queryKey: ["incidents"] });
+      void query.invalidateQueries({ queryKey: ["stats", "overview"] });
     },
   });
 }

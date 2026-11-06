@@ -1,3 +1,5 @@
+import { useIncidents } from "../api/incidents";
+import { IncidentList } from "./IncidentList";
 import { Link } from "react-router-dom";
 import { useEvents } from "../api/events";
 import { useAlerts } from "../api/alerts";
@@ -8,6 +10,12 @@ import { Card, ErrorState, Spinner } from "./ui";
 export function ServerActivity({ id, name }: { id: string; name: string }) {
   const events = useEvents({ serverId: id, page: 1, limit: 10 });
   const alerts = useAlerts({
+    serverId: id,
+    status: "open",
+    page: 1,
+    limit: 10,
+  });
+  const incidents = useIncidents({
     serverId: id,
     status: "open",
     page: 1,
@@ -53,6 +61,28 @@ export function ServerActivity({ id, name }: { id: string; name: string }) {
           />
         ) : (
           <AlertList items={alerts.data.items} serverNames={names} />
+        )}
+      </Card>
+      <Card className="lg:col-span-2">
+        <h2 className="text-lg font-semibold">Open incidents</h2>
+        <Link
+          className="text-teal-300"
+          to={`/incidents?serverId=${id}&status=open`}
+        >
+          View all open incidents
+        </Link>
+        {incidents.isPending ? (
+          <Spinner />
+        ) : incidents.isError ? (
+          <ErrorState
+            message={errorMessage(incidents.error)}
+            retry={() => void incidents.refetch()}
+          />
+        ) : (
+          <IncidentList
+            items={incidents.data.items ?? []}
+            serverNames={names}
+          />
         )}
       </Card>
     </>

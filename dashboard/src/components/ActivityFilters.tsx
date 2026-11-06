@@ -95,7 +95,13 @@ function SourceIpFilter({
     />
   );
 }
-export function ActivityFilters({ events = false }: { events?: boolean }) {
+export function ActivityFilters({
+  events = false,
+  incidents = false,
+}: {
+  events?: boolean;
+  incidents?: boolean;
+}) {
   const { params, setParams, filters, change } = useActivityParams(events);
   const [reset, setReset] = useState(0);
   const servers = useServers();
@@ -214,7 +220,10 @@ export function ActivityFilters({ events = false }: { events?: boolean }) {
               className={selectClass}
             >
               <option value="">All statuses</option>
-              {["open", "acknowledged", "resolved"].map((value) => (
+              {(incidents
+                ? ["open", "closed"]
+                : ["open", "acknowledged", "resolved"]
+              ).map((value) => (
                 <option key={value} value={value}>
                   {severityLabel(value)}
                 </option>

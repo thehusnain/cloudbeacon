@@ -90,14 +90,21 @@ function SessionSocket({
       retry = undefined;
       setStatus("connected");
       // Recover changes missed while disconnected.
-      refresh(["alerts"], ["alert"], ["events"], ["stats"], serverKeys.all, [
-        "server",
-      ]);
+      refresh(
+        ["incidents"],
+        ["incident"],
+        ["alerts"],
+        ["alert"],
+        ["events"],
+        ["stats"],
+        serverKeys.all,
+        ["server"],
+      );
     });
     socket.on("disconnect", reconnect);
     socket.on("connect_error", reconnect);
     socket.on("alert:new", (alert) => {
-      refresh(["alerts"], ["stats", "overview"]);
+      refresh(["alerts"], ["stats", "overview"], ["incidents"], ["incident"]);
       if (path.current !== "/alerts") setUnread((value) => value + 1);
       toast({
         title: alert.title,
@@ -112,7 +119,13 @@ function SessionSocket({
           ? { ...old, status: alert.status, eventCount: alert.eventCount }
           : old,
       );
-      refresh(["alert", alert.id], ["alerts"], ["stats", "overview"]);
+      refresh(
+        ["alert", alert.id],
+        ["alerts"],
+        ["stats", "overview"],
+        ["incidents"],
+        ["incident"],
+      );
     });
     socket.on("event:new", () => refresh(["events"], ["stats"]));
     socket.on("server:status", (update) => {

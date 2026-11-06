@@ -58,7 +58,18 @@ export function OverviewPage() {
                 ["Events in the last 24 hours", data.events.last24h],
               ].map(([label, value]) => (
                 <Card key={label}>
-                  <h2 className="text-sm text-slate-400">{label}</h2>
+                  <h2 className="text-sm text-slate-400">
+                    {label === "Open incidents" ? (
+                      <Link
+                        className="text-teal-300 hover:underline"
+                        to="/incidents?status=open"
+                      >
+                        {label}
+                      </Link>
+                    ) : (
+                      label
+                    )}
+                  </h2>
                   <p className="mt-3 text-3xl font-semibold">{value}</p>
                 </Card>
               ))}

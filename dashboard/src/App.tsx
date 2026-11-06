@@ -1,3 +1,5 @@
+import { IncidentsPage } from "./pages/IncidentsPage";
+import { IncidentDetailPage } from "./pages/IncidentDetailPage";
 import { SocketProvider } from "./context/SocketProvider";
 import { OverviewPage } from "./pages/OverviewPage";
 import { EventsPage } from "./pages/EventsPage";
@@ -25,7 +27,9 @@ export function App() {
             <Route path="/events" element={<EventsPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
             <Route path="/" element={<OverviewPage />} />
-            {["Incidents", "Settings"].map((title) => (
+            <Route path="/incidents" element={<IncidentsPage />} />
+            <Route path="/incidents/:id" element={<IncidentDetailPage />} />
+            {["Settings"].map((title) => (
               <Route
                 key={title}
                 path={title === "Overview" ? "/" : `/${title.toLowerCase()}`}
